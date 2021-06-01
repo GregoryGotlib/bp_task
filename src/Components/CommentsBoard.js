@@ -1,32 +1,34 @@
 import React, { useState, useEffect } from "react";
 import * as Style from "./style";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import Comment from "./Comment";
 import SearchIcon from "@material-ui/icons/Search";
 import InputAdornment from "@material-ui/core/InputAdornment";
-import { getComments } from "../Redux/actions/comment";
-import { getUsers } from "../Redux/actions/user";
+import { getComments, getUsers } from "../Services/Api";
 
 function CommentsBoard() {
   const [filteredComments, setFilteredComments] = useState(null);
   const [filterValue, setFilterValue] = useState("");
   const [filterError, setFilterError] = useState("");
+  const [comments, setComments] = useState(null);
+  const [users, setUsers] = useState(null);
   const app = useSelector((state) => state.app);
-  const dispatch = useDispatch();
 
   useEffect(() => {
     getBoardData();
-  }, []);
+  }, [app.comments]);
 
-  const getBoardData = () => {
-    dispatch(getComments());
-    dispatch(getUsers());
+  const getBoardData = async () => {
+    let comments = await getComments();
+    let users = await getUsers();
+    setComments(comments);
+    setUsers(users);
   };
 
   const renderComments = () => {
-    if (app.users?.length && app.comments?.length) {
-      return app.comments.map((obj) => {
-        const user = app.users.find((user) => user.email == obj.email);
+    if (users?.length && comments?.length) {
+      return comments.map((obj) => {
+        const user = users.find((user) => user.email == obj.email);
         return (
           <Comment
             avatarClick={getLastComment}
@@ -40,15 +42,15 @@ function CommentsBoard() {
   };
 
   const getLastComment = (email) => {
-    return app.users.find((user) => user.email == email);
+    return users.find((user) => user.email == email);
   };
 
   const renderFilteredComments = () => {
-    if (app.users?.length && filteredComments?.length) {
+    if (users?.length && filteredComments?.length) {
       return (
-        app.users.length &&
+        users.length &&
         filteredComments?.map((obj) => {
-          const user = app.users.find((user) => user.email == obj.email);
+          const user = users.find((user) => user.email == obj.email);
           return (
             <Comment
               avatarClick={getLastComment}
@@ -65,11 +67,11 @@ function CommentsBoard() {
   const handleFilter = (e) => {
     const filteredValue = e.target.value;
     setFilterValue(filteredValue);
-    if (!app.comments.length) {
+    if (!comments.length) {
       setFilterError("There are no comments to filter");
     } else {
       setFilteredComments(
-        app.comments?.filter((item) => item.comment.includes(filteredValue))
+        comments?.filter((item) => item.comment.includes(filteredValue))
       );
     }
   };
